@@ -5,6 +5,7 @@ local luaunit = require('luaunit')
 local utf8 = require('lua-utf8')
 local sections = require('sections')
 local level = sections.Level
+local Relation = sections.Relation
 
 TestLevel = {}
 
@@ -71,6 +72,21 @@ end
 function TestLevel:test_compareTo_higher_case()
     local me = level('●')
     local other = level('▼')
+end
+
+
+TestRelation = {}
+
+function TestRelation:test_iterate()
+    local relation = Relation("a")
+    relation.addChild("b")
+    relation.addChild("c")
+    relation.addChild("d")
+    local result = {}
+    for child in relation.iterateChildren() do
+        table.insert(result, child)
+    end
+    luaunit.assertEquals(result, {"b", "c", "d"})
 end
 
 os.exit(luaunit.LuaUnit.run())

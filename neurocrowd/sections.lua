@@ -52,6 +52,45 @@ local function Level(aMark)
     return self
 end
 
+---- 親子関係オブジェクト
+-- @param aParent 親
+-- @return 親子関係オブジェクト
+local function Relation(aParent)
+    local self = {}
+    local parent = aParent
+    local children = {}
+
+    ---- 子の追加
+    -- @param child 追加する子
+    function self.addChild(child)
+        table.insert(children, child)
+    end
+
+    ---- 親の取得
+    -- @return 親
+    function self.parentIs()
+        -- functionを親としてインスタンスを作ったのち、このメソッドで返すと別インスタンスになる
+        return parent
+    end
+
+    ---- 子のイテレータ取得
+    -- @return 子を数え上げるイテレータ
+    function self.iterateChildren()
+        return coroutine.wrap(function ()
+            local i = 1
+            while true do
+                coroutine.yield(children[i])
+                i = i + 1
+                if i > #children then
+                    break
+                end
+            end
+        end)
+    end
+
+    return self
+end
+
 ---- セクションオブジェクト
 -- @param line セクションの元となる行
 -- @param aParent 親セクション
@@ -64,13 +103,12 @@ local function Section(line, aParent)
     local level = Level(levelMark)
     local sectionName = utf8.match(line, "^[■◆●▼](.*)$")
     local facts = {}
-    local parent = aParent
-    local children = {}
+    local relation = Relation(aParent)
 
     --- 子セクションの追加
     -- @param aSection 子セクション
-    function self.appendChild(aSection)
-        table.insert(children, aSection)
+    function self.addChildren(aSection)
+        relation.addChildren(aSection)
     end
 
     --- セクションレベルの取得
@@ -92,24 +130,33 @@ local function Section(line, aParent)
         table.insert(facts, aLine)
     end
 
-    function self.printFacts()
-        for k, v in pairs(facts) do
-            print(v)
+    ---- セクション同士の階層の比較
+    -- @param target 比較対象のセクション
+    -- @return -1:自セクションが下階層、0:同階層、1:自セクションが上階層
+    function self.compareTo(target)
+        local result = target.levelIs() - self.levelIs()
+        if result < 0 then
+            return -1
+        elseif result == 0 then
+            return 0
+        else
+            return 1
         end
     end
 
-    function self.childrenAre()
-        return pairs(children)
+    ---- 子を数え上げる
+    -- @return 子を数え上げるイテレータ
+    function self.iterateChildren()
+        return relation.iterateChildren()
     end
 
-    if parent ~= nil then
-        parent.appendChild(self)
-    end
+    aParent.addChildren(self)
 
     return self
 end
 
 return {
     Level = Level,
+    Relation = Relation,
     Section = Section,
 }
