@@ -32,7 +32,7 @@ local function Section(line, aParent)
     local self = {}
 
     local level = levelIs(line)
-    local sectionName = line
+    local sectionName = utf8.match(line, '^[■◆●▼]+(.*)$')
     local parent = aParent
     local children = {}
     local sentences = {}
@@ -50,9 +50,22 @@ local function Section(line, aParent)
         table.insert(sentences, aLine)
     end
 
+    ---- 階層レベルを整数で返す
     function self.levelIs()
         return level
     end
+
+    ---- セクション名を返す(セクション名が'dummy'の場合は空文字列を返す)
+    function self.name()
+        return sectionName ~= 'dummy' and sectionName or ''
+    end
+
+    function self.getParent()
+        return parent
+    end
+
+    ---- 子の有無
+    self.hasChild = #children == 0 and true or false
 
     ---- セクション同士の階層の比較
     -- @param target 比較対象のセクション
@@ -62,7 +75,7 @@ local function Section(line, aParent)
     end
 
     ---- 子のイテレータ取得
-    -- @return 子を数え上げるイテレータ
+    -- @return 子を先頭から数え上げるイテレータ
     function self.iterateChildren()
         return coroutine.wrap(function ()
             local i = 1
@@ -73,6 +86,23 @@ local function Section(line, aParent)
                     break
                 end
             end
+            return nil
+        end)
+    end
+
+    ---- 子の逆順イテレータ取得
+    -- @return 子を後ろから数え上げるイテレータ
+    function self.reverseIterateChildren()
+        return coroutine.wrap(function()
+            local i = #children
+            while true do
+                coroutine.yield(children[i])
+                i = i - 1
+                if i < 1 then
+                    break
+                end
+            end
+            return nil
         end)
     end
 

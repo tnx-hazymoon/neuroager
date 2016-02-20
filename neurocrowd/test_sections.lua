@@ -49,4 +49,18 @@ function TestSection:testIterateChildren()
     luaunit.assertEquals(result, {child1, child2, child3})
 end
 
+---- 子の逆順イテレータのテスト
+function TestSection:testReverseIterateChildren()
+    local parent = Section('■親')
+    local child1 = Section('◆子１', parent)
+    local child2 = Section('◆子２', parent)
+    local child3 = Section('◆子３', parent)
+    local result = {}
+    for child in parent.reverseIterateChildren() do
+        table.insert(result, child)
+    end
+    luaunit.assertEquals(result, {child3, child2, child1})
+end
+
+
 os.exit(luaunit.LuaUnit.run())
