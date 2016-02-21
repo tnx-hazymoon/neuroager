@@ -189,32 +189,40 @@ local function Author(line, parent)
 end
 
 
----- プレイヤー人数オブジェクト
+---- 範囲情報オブジェクト
 -- Sectionを継承
 -- @param line セクション行
 -- @param parent 親セクション
-local function Players(line, parent)
+local function Range(line, parent)
 
     -- inheritance
     local self = Section(line, parent)
 
     ---- 本文の追加
-    -- lineが「　<人数>人」または「　<最少人数>～<最大人数>人」の形式の時、
+    -- lineが「　<数値>人」または「　<最少数>～<最大数>人」の形式の時、
     -- アクトのプレイヤー人数情報を抽出する
-    -- 「　<人数>人」の時は最少人数と最大人数は同値
+    -- 「　<数値>人」の時は最少数と最大数は同値
     -- 上記のパターン以外の時はSection.addSentenceと同じく本文を追加
     local parent_addSentence = self.addSentence
     function self.addSentence(line)
-        local matched1 = utf8.find(line, '^　*[１２３４５６７８９][１２３４５６７８９０]*人$')
-        local matched2 = utf8.find(line, '^　*[１２３４５６７８９][１２３４５６７８９０]*～[１２３４５６７８９][１２３４５６７８９０]*人$')
-        if matched1 == nil and matched2 == nil then
+        local matched1 = utf8.find(line, '^　*[１２３４５６７８９][１２３４５６７８９０]*[^～]')
+        local matched2 = utf8.find(line, '^　*[１２３４５６７８９][１２３４５６７８９０]*～[１２３４５６７８９][１２３４５６７８９０]*')
+        local matched3 = utf8.find(line, '^　*[1-9][0-9]*[^～]')
+        local matched4 = utf8.find(line, '^　*[1-9][0-9]*～[1-9][0-9]*')
+        if matched1 == nil and matched2 == nil and matched3 == nil and matched4 == nil then
             parent_addSentence(line)
-        elseif matched1 ~= nil and matched2 == nil then
-            self.min = zen2han(utf8.match(line, '([１２３４５６７８９]+[１２３４５６７８９０]*)人'))
-            self.max = zen2han(utf8.match(line, '([１２３４５６７８９]+[１２３４５６７８９０]*)人'))
-        elseif matched1 == nil and matched2 ~= nil then
+        elseif matched1 ~= nil and matched2 == nil and matched3 == nil and matched4 == nil then
+            self.min = zen2han(utf8.match(line, '([１２３４５６７８９]+[１２３４５６７８９０]*)'))
+            self.max = zen2han(utf8.match(line, '([１２３４５６７８９]+[１２３４５６７８９０]*)'))
+        elseif matched1 == nil and matched2 ~= nil and matched3 == nil and matched4 == nil then
             self.min = zen2han(utf8.match(line, '([１２３４５６７８９]+[１２３４５６７８９０]*)～'))
-            self.max = zen2han(utf8.match(line, '([１２３４５６７８９]+[１２３４５６７８９０]*)人'))            
+            self.max = zen2han(utf8.match(line, '～([１２３４５６７８９]+[１２３４５６７８９０]*)'))
+        elseif matched1 == nil and matched2 == nil and matched3 ~= nil and matched4 == nil then
+            self.min = tonumber(utf8.match(line, '([1-9][0-9]*)'))
+            self.max = tonumber(utf8.match(line, '([1-9][0-9]*)'))
+        elseif matched1 == nil and matched2 == nil and matched3 == nil and matched4 ~= nil then
+            self.min = tonumber(utf8.match(line, '([1-9][0-9]*)～'))
+            self.max = tonumber(utf8.match(line, '～([1-9][0-9]*)'))
         end
     end
 
@@ -224,5 +232,5 @@ end
 return {
     Section = Section,
     Author = Author,
-    Players = Players,
+    Range = Range,
 }

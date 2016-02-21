@@ -6,7 +6,7 @@ local utf8 = require('lua-utf8')
 local sections = require('sections')
 local Section = sections.Section
 local Author = sections.Author
-local Players = sections.Players
+local Range = sections.Range
 
 
 ---- テストスイート：Section
@@ -117,36 +117,53 @@ function TestAuthor:testIterateSentences()
 end
 
 
----- テストスイート：Players
-TestPlayers = {}
+---- テストスイート：Range
+TestRange = {}
 
----- 「　<人数>人」のパターンの時のテスト
-function TestPlayers:testAddSentence()
-    local section = Players('▼プレイヤー人数')
+---- 「　<数値（全角）>人」のパターンの時のテスト
+function TestRange:testAddSentence()
+    local section = Range('▼プレイヤー人数')
     section.addSentence('　９９人')
     luaunit.assertEquals(section.min, 99)
     luaunit.assertEquals(section.max, 99)
 end
 
----- 「　<最少人数>～<最大人数>人」のパターンの時のテスト
-function TestPlayers:testAddSentenceRangeCase()
-    local section = Players('▼プレイヤー人数')
+---- 「　<最少数（全角）>～<最大数（全角）>人」のパターンの時のテスト
+function TestRange:testAddSentenceRangeCase()
+    local section = Range('▼プレイヤー人数')
     section.addSentence('　１～９９人')
     luaunit.assertEquals(section.min, 1)
     luaunit.assertEquals(section.max, 99)
 end
 
+---- 「　<数値（半角）>人」のパターンの時のテスト
+function TestRange:testAddSentenceHalf()
+    local section = Range('▼プレイヤー人数')
+    section.addSentence('　99人')
+    luaunit.assertEquals(section.min, 99)
+    luaunit.assertEquals(section.max, 99)
+end
+
+---- 「　<最少数（半角）>～<最大数（半角）>人」のパターンの時のテスト
+function TestRange:testAddSentenceRangeCaseHalf()
+    local section = Range('▼プレイヤー人数')
+    section.addSentence('　1～99人')
+    luaunit.assertEquals(section.min, 1)
+    luaunit.assertEquals(section.max, 99)
+end
+
+
 ---- 人数を０から始めたときのテスト（このときは抽出しない）
-function TestPlayers:testAddSentenceIllegalCase()
-    local section = Players('▼プレイヤー人数')
+function TestRange:testAddSentenceIllegalCase()
+    local section = Range('▼プレイヤー人数')
     section.addSentence('　０９人')
     luaunit.assertEquals(section.min, nil)
     luaunit.assertEquals(section.max, nil)
 end
 
 ---- 通常の本文取得のテスト
-function TestPlayers:testIterateSentences()
-    local section = Players('▼プレイヤー人数')
+function TestRange:testIterateSentences()
+    local section = Range('▼プレイヤー人数')
     section.addSentence('　９９人')
     section.addSentence('本文１')
     section.addSentence('本文２')
