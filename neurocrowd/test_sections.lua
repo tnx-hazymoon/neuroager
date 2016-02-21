@@ -62,6 +62,7 @@ function TestSection:testReverseIterateChildren()
     luaunit.assertEquals(result, {child3, child2, child1})
 end
 
+---- 階層構造を渡り歩くイテレータのテスト
 function TestSection:testWalk()
     local parent = Section('■親')
     local child1 = Section('◆子１', parent)

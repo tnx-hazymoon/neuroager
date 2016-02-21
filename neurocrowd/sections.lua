@@ -68,13 +68,7 @@ local function Section(line, aParent)
 
     ---- 子の有無
     function self.hasChild()
-        print('current(69): ' .. self.name())
-        print('children: ' .. #children)
-        if #children > 0 then
-            return true
-        else
-            return false
-        end
+        return #children > 0 and true or false
     end
 
     ---- セクション同士の階層の比較
@@ -116,12 +110,21 @@ local function Section(line, aParent)
         end)
     end
 
+    ---- 自分自身を起点として子階層の構造を渡り歩くイテレータの取得
+    -- @return 自分自身を起点とする子階層の構造を渡り歩くイテレータ
     function self.walk()
+        local function moveToChildIfNotInStack(current, stack)
+            for child in current.iterateChildren() do
+                if stack[child.id] == nil then
+                    return child
+                end
+            end
+            return current.getParent()
+        end
         return coroutine.wrap(function()
             local current = self
             local stack = {}
             while true do
-                -- print(current.name())
                 if stack[current.id] == nil then
                     stack[current.id] = current
                     coroutine.yield(current)
@@ -129,17 +132,7 @@ local function Section(line, aParent)
                 if not current.hasChild then
                     current = current.getParent()
                 else
-                    local not_in_stack = false
-                    for child in current.iterateChildren() do
-                        if stack[child.id] == nil then
-                            not_in_stack = true
-                            current = child
-                            break
-                        end
-                    end
-                    if not not_in_stack then
-                        current = current.getParent()
-                    end
+                    current = moveToChildIfNotInStack(current, stack)
                 end
                 if current == self.getParent() then
                     break
