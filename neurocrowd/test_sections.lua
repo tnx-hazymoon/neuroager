@@ -5,6 +5,7 @@ local luaunit = require('luaunit')
 local utf8 = require('lua-utf8')
 local sections = require('sections')
 local Section = sections.Section
+local Author = sections.Author
 
 ---- テストスイート：Section
 TestSection = {}
@@ -85,6 +86,28 @@ function TestSection:testWalk()
     luaunit.assertEquals(result, {parent, child1, grand_child1, great_grand_child1,
                          grand_child2, child2, grand_child3, great_grand_child2,
                          grand_child4, child3, grand_child5, grand_child6, great_grand_child3})
+end
+
+TestAuthor = {}
+
+function TestAuthor:testAddSentence()
+    local section = Author('▼作者')
+    section.addSentence('　朧月（twitter：@tnx-hazymoon）')
+    luaunit.assertEquals(section.name, '朧月')
+    luaunit.assertEquals(section.twitter, '@tnx-hazymoon')
+end
+
+function TestAuthor:testIterateSentences()
+    local section = Author('▼作者')
+    section.addSentence('　朧月（twitter：@tnx-hazymoon）')
+    section.addSentence('本文１')
+    section.addSentence('本文２')
+    section.addSentence('本文３')
+    local result = {}
+    for sentence in section.iterateSentences() do
+        table.insert(result, sentence)
+    end
+    luaunit.assertEquals(result, {'本文１', '本文２', '本文３'})
 end
 
 os.exit(luaunit.LuaUnit.run())

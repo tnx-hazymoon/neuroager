@@ -47,7 +47,7 @@ local function Section(line, aParent)
 
     --- セクション内文章の追加
     -- @param aLine 追加する文章
-    function self.append(aLine)
+    function self.addSentence(aLine)
         assert(type(aLine) == "string")
         table.insert(sentences, aLine)
     end
@@ -82,13 +82,8 @@ local function Section(line, aParent)
     -- @return 子を先頭から数え上げるイテレータ
     function self.iterateChildren()
         return coroutine.wrap(function ()
-            local i = 1
-            while true do
+            for i = 1, #children do
                 coroutine.yield(children[i])
-                i = i + 1
-                if i > #children then
-                    break
-                end
             end
             return nil
         end)
@@ -98,13 +93,19 @@ local function Section(line, aParent)
     -- @return 子を後ろから数え上げるイテレータ
     function self.reverseIterateChildren()
         return coroutine.wrap(function()
-            local i = #children
-            while true do
+            for i = #children, 1, -1 do
                 coroutine.yield(children[i])
-                i = i - 1
-                if i < 1 then
-                    break
-                end
+            end
+            return nil
+        end)
+    end
+
+    ---- 本文のイテレータ取得
+    -- @return 本文を1行ずつ取得するイテレータ
+    function self.iterateSentences()
+        return coroutine.wrap(function()
+            for i = 1, #sentences do
+                coroutine.yield(sentences[i])
             end
             return nil
         end)
@@ -124,7 +125,7 @@ local function Section(line, aParent)
         return coroutine.wrap(function()
             local current = self
             local stack = {}
-            while true do
+            while current ~= self.getParent() do
                 if stack[current.id] == nil then
                     stack[current.id] = current
                     coroutine.yield(current)
@@ -133,9 +134,6 @@ local function Section(line, aParent)
                     current = current.getParent()
                 else
                     current = moveToChildIfNotInStack(current, stack)
-                end
-                if current == self.getParent() then
-                    break
                 end
             end
         end)
@@ -148,6 +146,34 @@ local function Section(line, aParent)
     return self
 end
 
+---- 作者オブジェクト
+-- Sectionを継承
+-- @param line セクション行
+-- @param parent 親セクション
+local function Author(line, parent)
+
+    -- inheritance
+    local self = Section(line, parent)
+    
+    ---- 本文の追加
+    -- lineが「　<名前>（twitter:<@Twitterアカウント>）」の形式の時、作者名とTwitterアカウントを抽出
+    -- それ以外はSection.addSentenceと同じく本文を追加します
+    -- @param line 追加する本文
+    local parent_addSentence = self.addSentence
+    function self.addSentence(line)
+        local matched = utf8.find(line, '^　*.*（twitter：@.*）$')
+        if matched == nil then
+            parent_addSentence(line)
+        else
+            self.name = utf8.match(line, '　*([^（]+)')
+            self.twitter = utf8.match(line, '（twitter：(@.*)）')
+        end
+    end
+
+    return self
+end
+
 return {
     Section = Section,
+    Author = Author,
 }
