@@ -6,6 +6,7 @@
 -- @copyright hazymoon, 2016
 
 local utf8 = require('lua-utf8')
+local uuid = require('uuid')
 
 local function levelIs(line)
     local mark = utf8.match(line, "^([■◆●▼]+).*$")
@@ -36,6 +37,7 @@ local function Section(line, aParent)
     local parent = aParent
     local children = {}
     local sentences = {}
+    self.id = uuid()
 
     --- 子セクションの追加
     -- @param child 子セクション
@@ -65,7 +67,15 @@ local function Section(line, aParent)
     end
 
     ---- 子の有無
-    self.hasChild = #children == 0 and true or false
+    function self.hasChild()
+        print('current(69): ' .. self.name())
+        print('children: ' .. #children)
+        if #children > 0 then
+            return true
+        else
+            return false
+        end
+    end
 
     ---- セクション同士の階層の比較
     -- @param target 比較対象のセクション
@@ -103,6 +113,38 @@ local function Section(line, aParent)
                 end
             end
             return nil
+        end)
+    end
+
+    function self.walk()
+        return coroutine.wrap(function()
+            local current = self
+            local stack = {}
+            while true do
+                -- print(current.name())
+                if stack[current.id] == nil then
+                    stack[current.id] = current
+                    coroutine.yield(current)
+                end
+                if not current.hasChild then
+                    current = current.getParent()
+                else
+                    local not_in_stack = false
+                    for child in current.iterateChildren() do
+                        if stack[child.id] == nil then
+                            not_in_stack = true
+                            current = child
+                            break
+                        end
+                    end
+                    if not not_in_stack then
+                        current = current.getParent()
+                    end
+                end
+                if current == self.getParent() then
+                    break
+                end
+            end
         end)
     end
 

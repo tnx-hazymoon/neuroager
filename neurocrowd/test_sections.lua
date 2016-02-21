@@ -62,5 +62,28 @@ function TestSection:testReverseIterateChildren()
     luaunit.assertEquals(result, {child3, child2, child1})
 end
 
+function TestSection:testWalk()
+    local parent = Section('■親')
+    local child1 = Section('◆子１', parent)
+    local child2 = Section('◆子２', parent)
+    local child3 = Section('◆子３', parent)
+    local grand_child1 = Section('◆孫１', child1)
+    local grand_child2 = Section('◆孫２', child1)
+    local grand_child3 = Section('◆孫３', child2)
+    local grand_child4 = Section('◆孫４', child2)
+    local grand_child5 = Section('◆孫５', child3)
+    local grand_child6 = Section('◆孫６', child3)
+    local great_grand_child1 = Section('●曾孫１', grand_child1)
+    local great_grand_child2 = Section('●曾孫２', grand_child3)
+    local great_grand_child3 = Section('●曾孫３', grand_child6)
+
+    local result = {}
+    for node in parent.walk() do
+        table.insert(result, node)
+    end
+    luaunit.assertEquals(result, {parent, child1, grand_child1, great_grand_child1,
+                         grand_child2, child2, grand_child3, great_grand_child2,
+                         grand_child4, child3, grand_child5, grand_child6, great_grand_child3})
+end
 
 os.exit(luaunit.LuaUnit.run())
