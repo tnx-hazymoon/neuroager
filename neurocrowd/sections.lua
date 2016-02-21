@@ -25,6 +25,20 @@ local function levelIs(line)
     end
 end
 
+
+local function zen2han(value)
+    local tbl = {}
+    tbl['１']=1; tbl['２']=2; tbl['３']=3; tbl['４']=4; tbl['５']=5; 
+    tbl['６']=6; tbl['７']=7; tbl['８']=8; tbl['９']=9; tbl['０']=0; 
+    local converted = ''
+    for i = 1, utf8.len(value) do
+        local ch = utf8.sub(value, i, i)
+        converted = converted .. tbl[ch]
+    end
+    return tonumber(converted)
+end
+
+
 ---- セクションオブジェクト
 -- @param line セクションの元となる行
 -- @param aParent 親セクション
@@ -146,6 +160,7 @@ local function Section(line, aParent)
     return self
 end
 
+
 ---- 作者オブジェクト
 -- Sectionを継承
 -- @param line セクション行
@@ -157,7 +172,7 @@ local function Author(line, parent)
     
     ---- 本文の追加
     -- lineが「　<名前>（twitter:<@Twitterアカウント>）」の形式の時、作者名とTwitterアカウントを抽出
-    -- それ以外はSection.addSentenceと同じく本文を追加します
+    -- それ以外はSection.addSentenceと同じく本文を追加
     -- @param line 追加する本文
     local parent_addSentence = self.addSentence
     function self.addSentence(line)
@@ -173,7 +188,41 @@ local function Author(line, parent)
     return self
 end
 
+
+---- プレイヤー人数オブジェクト
+-- Sectionを継承
+-- @param line セクション行
+-- @param parent 親セクション
+local function Players(line, parent)
+
+    -- inheritance
+    local self = Section(line, parent)
+
+    ---- 本文の追加
+    -- lineが「　<人数>人」または「　<最少人数>～<最大人数>人」の形式の時、
+    -- アクトのプレイヤー人数情報を抽出する
+    -- 「　<人数>人」の時は最少人数と最大人数は同値
+    -- 上記のパターン以外の時はSection.addSentenceと同じく本文を追加
+    local parent_addSentence = self.addSentence
+    function self.addSentence(line)
+        local matched1 = utf8.find(line, '^　*[１２３４５６７８９][１２３４５６７８９０]*人$')
+        local matched2 = utf8.find(line, '^　*[１２３４５６７８９][１２３４５６７８９０]*～[１２３４５６７８９][１２３４５６７８９０]*人$')
+        if matched1 == nil and matched2 == nil then
+            parent_addSentence(line)
+        elseif matched1 ~= nil and matched2 == nil then
+            self.min = zen2han(utf8.match(line, '([１２３４５６７８９]+[１２３４５６７８９０]*)人'))
+            self.max = zen2han(utf8.match(line, '([１２３４５６７８９]+[１２３４５６７８９０]*)人'))
+        elseif matched1 == nil and matched2 ~= nil then
+            self.min = zen2han(utf8.match(line, '([１２３４５６７８９]+[１２３４５６７８９０]*)～'))
+            self.max = zen2han(utf8.match(line, '([１２３４５６７８９]+[１２３４５６７８９０]*)人'))            
+        end
+    end
+
+    return self
+end
+
 return {
     Section = Section,
     Author = Author,
+    Players = Players,
 }

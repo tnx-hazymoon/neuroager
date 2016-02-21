@@ -6,6 +6,8 @@ local utf8 = require('lua-utf8')
 local sections = require('sections')
 local Section = sections.Section
 local Author = sections.Author
+local Players = sections.Players
+
 
 ---- テストスイート：Section
 TestSection = {}
@@ -88,8 +90,11 @@ function TestSection:testWalk()
                          grand_child4, child3, grand_child5, grand_child6, great_grand_child3})
 end
 
+
+---- テストスイート：Author
 TestAuthor = {}
 
+---- 作者名とTwitterアカウントの抽出テスト
 function TestAuthor:testAddSentence()
     local section = Author('▼作者')
     section.addSentence('　朧月（twitter：@tnx-hazymoon）')
@@ -97,9 +102,52 @@ function TestAuthor:testAddSentence()
     luaunit.assertEquals(section.twitter, '@tnx-hazymoon')
 end
 
+---- 通常の本文の取得テスト
 function TestAuthor:testIterateSentences()
     local section = Author('▼作者')
     section.addSentence('　朧月（twitter：@tnx-hazymoon）')
+    section.addSentence('本文１')
+    section.addSentence('本文２')
+    section.addSentence('本文３')
+    local result = {}
+    for sentence in section.iterateSentences() do
+        table.insert(result, sentence)
+    end
+    luaunit.assertEquals(result, {'本文１', '本文２', '本文３'})
+end
+
+
+---- テストスイート：Players
+TestPlayers = {}
+
+---- 「　<人数>人」のパターンの時のテスト
+function TestPlayers:testAddSentence()
+    local section = Players('▼プレイヤー人数')
+    section.addSentence('　９９人')
+    luaunit.assertEquals(section.min, 99)
+    luaunit.assertEquals(section.max, 99)
+end
+
+---- 「　<最少人数>～<最大人数>人」のパターンの時のテスト
+function TestPlayers:testAddSentenceRangeCase()
+    local section = Players('▼プレイヤー人数')
+    section.addSentence('　１～９９人')
+    luaunit.assertEquals(section.min, 1)
+    luaunit.assertEquals(section.max, 99)
+end
+
+---- 人数を０から始めたときのテスト（このときは抽出しない）
+function TestPlayers:testAddSentenceIllegalCase()
+    local section = Players('▼プレイヤー人数')
+    section.addSentence('　０９人')
+    luaunit.assertEquals(section.min, nil)
+    luaunit.assertEquals(section.max, nil)
+end
+
+---- 通常の本文取得のテスト
+function TestPlayers:testIterateSentences()
+    local section = Players('▼プレイヤー人数')
+    section.addSentence('　９９人')
     section.addSentence('本文１')
     section.addSentence('本文２')
     section.addSentence('本文３')
